@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NutriCalc">
+<meta name="theme-color" content="#0D6E8A">
+<title>Calculadora Nutricional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --petrol: #0D6E8A;
+    --petrol-d: #0A5570;
+    --petrol-l: #E0F0F5;
+    --teal: #00B4A6;
+    --teal-l: #DDF5F3;
+    --verde: #22A06B;
+    --verde-l: #E3F7EE;
+    --naranja: #E07B2A;
+    --naranja-l: #FDF0E4;
+    --rojo: #C94040;
+    --rojo-l: #FAE8E8;
+    --lila: #5C4B8A;
+    --lila-l: #EDEBF5;
+    --bg: #F2F5F8;
+    --surface: #FFFFFF;
+    --text: #1A2332;
+    --text2: #6B7A92;
+    --border: rgba(0,0,0,0.08);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    overscroll-behavior: none;
+  }
+
+  /* ── STATUS BAR SAFE AREA ── */
+  .safe-top {
+    height: env(safe-area-inset-top, 0px);
+    background: var(--petrol);
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--petrol);
+    padding: 1rem 1.25rem 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner { display: flex; align-items: flex-start; justify-content: space-between; }
+  header h1 { font-size: 22px; font-weight: 600; color: white; letter-spacing: -0.02em; }
+  header p { font-size: 12px; color: rgba(255,255,255,0.65); margin-top: 2px; font-weight: 300; }
+  .imc-badge {
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: white;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    background: var(--petrol-d);
+    display: flex;
+    padding: 0 1rem 0.75rem;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  .tab.active {
+    background: white;
+    color: var(--petrol);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    max-width: 520px;
+    margin: 0 auto;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  .card-title {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── FIELD ── */
+  .field {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 52px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .field:last-child { border-bottom: none; }
+  .field label {
+    font-size: 15px;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+  }
+  .field-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+  input[type="number"] {
+    width: 80px;
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--petrol);
+    background: var(--petrol-l);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    transition: background 0.15s;
+  }
+  input[type="number"]:focus { background: #C5E4EF; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  select {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--petrol);
+    background: var(--petrol-l);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230D6E8A' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 28px;
+  }
+
+  .unit { font-size: 13px; color: var(--text2); }
+
+  /* ── DERIVED ── */
+  .derived {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    min-height: 48px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .derived:last-child { border-bottom: none; }
+  .derived label { font-size: 14px; color: var(--text2); flex: 1; }
+  .derived .dval {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .derived .dunit { font-size: 12px; color: var(--text2); min-width: 36px; }
+
+  /* ── PESO PILLS ── */
+  .peso-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .peso-row label { font-size: 12px; color: var(--text2); display: block; margin-bottom: 8px; }
+  .pills { display: flex; gap: 8px; }
+  .pill {
+    flex: 1;
+    text-align: center;
+    padding: 8px 4px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.18s;
+    border: 1.5px solid transparent;
+    user-select: none;
+  }
+  .pill small { display: block; font-size: 11px; font-weight: 400; margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .pill.active {
+    background: var(--petrol-l);
+    color: var(--petrol);
+    border-color: var(--petrol);
+  }
+
+  /* ── RESULT CARDS GRID ── */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+  }
+  .rc {
+    background: var(--surface);
+    padding: 14px 16px;
+  }
+  .rc-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .rc-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    line-height: 1;
+  }
+  .rc-unit { font-size: 11px; color: var(--text2); margin-top: 3px; }
+  .rc-petrol .rc-val { color: var(--petrol); }
+  .rc-verde .rc-val { color: var(--verde); }
+  .rc-naranja .rc-val { color: var(--naranja); }
+  .rc-lila .rc-val { color: var(--lila); }
+
+  /* ── CRÍTICO BLOCKS ── */
+  .crit-block {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .crit-block:last-child { border-bottom: none; }
+  .crit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+  .badge-naranja { background: var(--naranja-l); color: var(--naranja); }
+  .badge-verde { background: var(--verde-l); color: var(--verde); }
+  .badge-rojo { background: var(--rojo-l); color: var(--rojo); }
+  .crit-desc { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+  .crit-range {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .crit-range .r-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+  }
+  .crit-range .r-sep { font-size: 16px; color: var(--text2); padding: 0 2px; }
+  .crit-range .r-unit { font-size: 13px; color: var(--text2); margin-left: 4px; }
+  .naranja-val { color: var(--naranja); }
+  .verde-val { color: var(--verde); }
+  .rojo-val { color: var(--rojo); }
+
+  /* ── NA STATE ── */
+  .na { color: var(--border); font-size: 22px; font-family: 'DM Mono', monospace; }
+  .na-sm { color: var(--border); font-size: 26px; font-family: 'DM Mono', monospace; }
+
+  /* ── RESUMEN ── */
+  .resumen-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .resumen-row:last-child { border-bottom: none; }
+  .rr-label { font-size: 14px; color: var(--text2); flex: 1; line-height: 1.3; }
+  .rr-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 17px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .rr-unit { font-size: 12px; color: var(--text2); min-width: 52px; text-align: right; }
+  .rr-range { font-size: 13px; color: var(--text2); text-align: right; }
+
+  .section-head {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 8px 16px 4px;
+    color: white;
+  }
+  .sh-verde { background: var(--verde); }
+  .sh-naranja { background: var(--naranja); }
+  .sh-rojo { background: var(--rojo); }
+
+  .footer-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text2);
+    padding: 1rem;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<div class="safe-top"></div>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>NutriCalc</h1>
+      <p>Calculadora Nutricional Clínica</p>
+    </div>
+    <div class="imc-badge" id="hdr-imc">IMC —</div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="tab active" data-panel="datos">Paciente</div>
+  <div class="tab" data-panel="hosp">Hospitalización</div>
+  <div class="tab" data-panel="critico">Crítico</div>
+  <div class="tab" data-panel="resumen">Resumen</div>
+</nav>
+
+<main>
+
+  <!-- ══ PANEL: DATOS ══ -->
+  <div class="panel active" id="panel-datos">
+
+    <div class="card">
+      <div class="card-title">Datos antropométricos</div>
+      <div class="field">
+        <label>Peso real</label>
+        <div class="field-right">
+          <input type="number" id="peso" placeholder="—" min="0" max="300" step="0.1">
+          <span class="unit">kg</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Talla</label>
+        <div class="field-right">
+          <input type="number" id="talla" placeholder="—" min="0" max="250" step="1">
+          <span class="unit">cm</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Edad</label>
+        <div class="field-right">
+          <input type="number" id="edad" placeholder="—" min="0" max="120" step="1">
+          <span class="unit">años</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Sexo</label>
+        <div class="field-right">
+          <select id="sexo">
+            <option value="H">Hombre</option>
+            <option value="M">Mujer</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Factores</div>
+      <div class="field">
+        <label>Factor estrés calórico</label>
+        <div class="field-right">
+          <input type="number" id="fCal" value="1.3" min="1" max="2" step="0.05" style="width:70px">
+        </div>
+      </div>
+      <div class="field">
+        <label>Factor proteico</label>
+        <div class="field-right">
+          <input type="number" id="fProt" value="1.2" min="1" max="2" step="0.05" style="width:70px">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Pesos e IMC</div>
+      <div class="derived">
+        <label>IMC</label>
+        <span class="dval" id="d-imc">—</span>
+        <span class="dunit">kg/m²</span>
+      </div>
+      <div class="derived">
+        <label>Peso ideal (Devine)</label>
+        <span class="dval" id="d-pideal">—</span>
+        <span class="dunit">kg</span>
+      </div>
+      <div class="derived">
+        <label>Peso ajustado (IMC ≥ 30)</label>
+        <span class="dval" id="d-pajust">—</span>
+        <span class="dunit">kg</span>
+      </div>
+      <div class="peso-row">
+        <label>Peso a utilizar en cálculos</label>
+        <div class="pills">
+          <div class="pill active" data-tipo="real">
+            Real
+            <small id="pill-real">—</small>
+          </div>
+          <div class="pill" data-tipo="ideal">
+            Ideal
+            <small id="pill-ideal">—</small>
+          </div>
+          <div class="pill" data-tipo="ajustado">
+            Ajustado
+            <small id="pill-ajust">—</small>
+          </div>
+        </div>
+      </div>
+      <div class="derived" style="background:#FDF6E8;">
+        <label style="font-weight:500;color:#E07B2A">Peso utilizado</label>
+        <span class="dval" id="d-puso" style="color:#E07B2A">—</span>
+        <span class="dunit">kg</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ PANEL: HOSPITALIZACIÓN ══ -->
+  <div class="panel" id="panel-hosp">
+    <div class="card">
+      <div class="card-title">Harris-Benedict</div>
+      <div class="results-grid">
+        <div class="rc rc-petrol">
+          <div class="rc-label">GEB</div>
+          <div class="rc-val" id="r-geb">—</div>
+          <div class="rc-unit">Kcal/día</div>
+        </div>
+        <div class="rc rc-verde">
+          <div class="rc-label">GET</div>
+          <div class="rc-val" id="r-get">—</div>
+          <div class="rc-unit">Kcal/día</div>
+        </div>
+        <div class="rc rc-naranja">
+          <div class="rc-label">Proteínas</div>
+          <div class="rc-val" id="r-prot-h">—</div>
+          <div class="rc-unit">g/día</div>
+        </div>
+        <div class="rc rc-lila">
+          <div class="rc-label">Nitrógeno</div>
+          <div class="rc-val" id="r-nit-h">—</div>
+          <div class="rc-unit">g N/día</div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-note">
+      GEB según Harris-Benedict (1919)<br>
+      GET = GEB × Factor estrés calórico
+    </div>
+  </div>
+
+  <!-- ══ PANEL: CRÍTICO ══ -->
+  <div class="panel" id="panel-critico">
+    <div class="card">
+      <div class="section-head sh-naranja">IMC &lt; 30</div>
+      <div class="crit-block">
+        <div class="crit-badge badge-naranja">Fase estrés</div>
+        <div class="crit-desc">10 – 20 Kcal/kg</div>
+        <div class="crit-range">
+          <span class="r-val naranja-val" id="c-estres-min">—</span>
+          <span class="r-sep">–</span>
+          <span class="r-val naranja-val" id="c-estres-max">—</span>
+          <span class="r-unit">Kcal/día</span>
+        </div>
+      </div>
+      <div class="crit-block">
+        <div class="crit-badge badge-verde">Fase estable</div>
+        <div class="crit-desc">25 – 30 Kcal/kg</div>
+        <div class="crit-range">
+          <span class="r-val verde-val" id="c-estable-min">—</span>
+          <span class="r-sep">–</span>
+          <span class="r-val verde-val" id="c-estable-max">—</span>
+          <span class="r-unit">Kcal/día</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-head sh-rojo">IMC ≥ 30 · Peso real siempre</div>
+      <div class="crit-block">
+        <div class="crit-badge badge-rojo">11 – 14 Kcal/kg</div>
+        <div class="crit-desc">Siempre sobre peso real, independientemente del peso elegido</div>
+        <div class="crit-range">
+          <span class="r-val rojo-val" id="c-alto-min">—</span>
+          <span class="r-sep">–</span>
+          <span class="r-val rojo-val" id="c-alto-max">—</span>
+          <span class="r-unit">Kcal/día</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Proteínas y nitrógeno (crítico)</div>
+      <div class="results-grid">
+        <div class="rc rc-naranja">
+          <div class="rc-label">Proteínas</div>
+          <div class="rc-val" id="c-prot">—</div>
+          <div class="rc-unit">g/día</div>
+        </div>
+        <div class="rc rc-petrol">
+          <div class="rc-label">Nitrógeno</div>
+          <div class="rc-val" id="c-nit">—</div>
+          <div class="rc-unit">g N/día</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: RESUMEN ══ -->
+  <div class="panel" id="panel-resumen">
+    <div class="card">
+      <div class="card-title" style="background:var(--verde);color:white;padding:10px 16px;">Hospitalización</div>
+      <div class="resumen-row">
+        <span class="rr-label">GEB</span>
+        <span class="rr-val" id="s-geb" style="color:var(--petrol)">—</span>
+        <span class="rr-unit">Kcal/día</span>
+      </div>
+      <div class="resumen-row">
+        <span class="rr-label">GET (GEB × factor)</span>
+        <span class="rr-val" id="s-get" style="color:var(--verde)">—</span>
+        <span class="rr-unit">Kcal/día</span>
+      </div>
+      <div class="resumen-row">
+        <span class="rr-label">Proteínas</span>
+        <span class="rr-val" id="s-prot-h" style="color:var(--naranja)">—</span>
+        <span class="rr-unit">g/día</span>
+      </div>
+      <div class="resumen-row">
+        <span class="rr-label">Nitrógeno</span>
+        <span class="rr-val" id="s-nit-h" style="color:var(--lila)">—</span>
+        <span class="rr-unit">g N/día</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="background:var(--naranja);color:white;padding:10px 16px;">Crítico · IMC &lt; 30</div>
+      <div class="resumen-row">
+        <span class="rr-label">Fase estrés</span>
+        <span class="rr-val" id="s-estres" style="color:var(--naranja)">—</span>
+        <span class="rr-unit">Kcal/día</span>
+      </div>
+      <div class="resumen-row">
+        <span class="rr-label">Fase estable</span>
+        <span class="rr-val" id="s-estable" style="color:var(--verde)">—</span>
+        <span class="rr-unit">Kcal/día</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="background:var(--rojo);color:white;padding:10px 16px;">Crítico · IMC ≥ 30</div>
+      <div class="resumen-row">
+        <span class="rr-label">Requerimientos (peso real)</span>
+        <span class="rr-val" id="s-alto" style="color:var(--rojo)">—</span>
+        <span class="rr-unit">Kcal/día</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Proteínas y nitrógeno</div>
+      <div class="resumen-row">
+        <span class="rr-label">Proteínas</span>
+        <span class="rr-val" id="s-prot-c" style="color:var(--naranja)">—</span>
+        <span class="rr-unit">g/día</span>
+      </div>
+      <div class="resumen-row">
+        <span class="rr-label">Nitrógeno</span>
+        <span class="rr-val" id="s-nit-c" style="color:var(--petrol)">—</span>
+        <span class="rr-unit">g N/día</span>
+      </div>
+      <div class="resumen-row" style="background:#F2F5F8;">
+        <span class="rr-label" style="color:var(--text2);font-size:13px;">Peso utilizado en cálculos</span>
+        <span class="rr-val" id="s-puso" style="color:var(--naranja);font-size:15px;">—</span>
+        <span class="rr-unit">kg</span>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Harris-Benedict (1919) · Devine (1974)<br>
+      Requerimientos crítico: ASPEN/ESPEN
+    </div>
+  </div>
+
+</main>
+
+<script>
+let pesoTipo = 'real';
+let vals = { imc: null, pideal: null, pajust: null, puso: null, geb: null, get_: null, prot: null, nit: null };
+
+function n(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+function fmt(v, dec=0) { return (v == null || isNaN(v) || v <= 0) ? '—' : v.toFixed(dec); }
+function set(id, v, dec=0) { const el=document.getElementById(id); if(el) el.textContent = fmt(v, dec); }
+
+function calc() {
+  const peso = n('peso'), talla = n('talla'), edad = n('edad');
+  const sexo = document.getElementById('sexo').value;
+  const fCal = n('fCal'), fProt = n('fProt');
+
+  const imc = (peso>0 && talla>0) ? peso/((talla/100)**2) : null;
+  const pideal = talla>0 ? (sexo==='H' ? 50+0.91*(talla-152.4) : 45.5+0.91*(talla-152.4)) : null;
+  const pajust = (peso>0 && pideal!=null) ? pideal+0.4*(peso-pideal) : null;
+
+  set('d-imc', imc, 1);
+  set('d-pideal', pideal, 1);
+  set('d-pajust', pajust, 1);
+
+  document.getElementById('pill-real').textContent = peso>0 ? peso.toFixed(1)+' kg' : '—';
+  document.getElementById('pill-ideal').textContent = pideal!=null ? pideal.toFixed(1)+' kg' : '—';
+  document.getElementById('pill-ajust').textContent = pajust!=null ? pajust.toFixed(1)+' kg' : '—';
+
+  document.getElementById('hdr-imc').textContent = imc!=null ? 'IMC '+imc.toFixed(1) : 'IMC —';
+
+  let puso = null;
+  if (pesoTipo==='real' && peso>0) puso = peso;
+  else if (pesoTipo==='ideal' && pideal!=null) puso = pideal;
+  else if (pesoTipo==='ajustado' && pajust!=null) puso = pajust;
+
+  set('d-puso', puso, 1);
+
+  const geb = (puso && talla>0 && edad>0)
+    ? (sexo==='H'
+      ? 88.36+13.4*puso+4.8*talla-5.68*edad
+      : 447.6+9.25*puso+3.1*talla-4.33*edad)
+    : null;
+  const get_ = geb ? geb*fCal : null;
+  const prot = puso ? puso*fProt : null;
+  const nit  = puso ? puso*fProt/6.25 : null;
+
+  // Hosp
+  set('r-geb', geb, 0); set('r-get', get_, 0);
+  set('r-prot-h', prot, 1); set('r-nit-h', nit, 2);
+
+  // Crítico
+  const imcOk = imc != null;
+  if (imcOk && imc<30 && puso) {
+    set('c-estres-min', 10*puso, 0); set('c-estres-max', 20*puso, 0);
+    set('c-estable-min', 25*puso, 0); set('c-estable-max', 30*puso, 0);
+    ['c-alto-min','c-alto-max'].forEach(id => document.getElementById(id).textContent='—');
+  } else if (imcOk && imc>=30 && peso>0) {
+    ['c-estres-min','c-estres-max','c-estable-min','c-estable-max'].forEach(id => document.getElementById(id).textContent='—');
+    set('c-alto-min', 11*peso, 0); set('c-alto-max', 14*peso, 0);
+  } else {
+    ['c-estres-min','c-estres-max','c-estable-min','c-estable-max','c-alto-min','c-alto-max'].forEach(id => document.getElementById(id).textContent='—');
+  }
+  set('c-prot', prot, 1); set('c-nit', nit, 2);
+
+  // Resumen
+  set('s-geb', geb, 0); set('s-get', get_, 0);
+  set('s-prot-h', prot, 1); set('s-nit-h', nit, 2);
+  set('s-prot-c', prot, 1); set('s-nit-c', nit, 2);
+  set('s-puso', puso, 1);
+
+  if (imcOk && imc<30 && puso) {
+    document.getElementById('s-estres').textContent = (10*puso).toFixed(0)+'–'+(20*puso).toFixed(0);
+    document.getElementById('s-estable').textContent = (25*puso).toFixed(0)+'–'+(30*puso).toFixed(0);
+    document.getElementById('s-alto').textContent = '—';
+  } else if (imcOk && imc>=30 && peso>0) {
+    document.getElementById('s-estres').textContent = '—';
+    document.getElementById('s-estable').textContent = '—';
+    document.getElementById('s-alto').textContent = (11*peso).toFixed(0)+'–'+(14*peso).toFixed(0);
+  } else {
+    ['s-estres','s-estable','s-alto'].forEach(id => document.getElementById(id).textContent='—');
+  }
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.panel).classList.add('active');
+  });
+});
+
+// Pills
+document.querySelectorAll('.pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    pesoTipo = pill.dataset.tipo;
+    calc();
+  });
+});
+
+// Inputs
+['peso','talla','edad','fCal','fProt'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calc);
+});
+document.getElementById('sexo').addEventListener('change', calc);
+
+calc();
+</script>
+</body>
+</html>
